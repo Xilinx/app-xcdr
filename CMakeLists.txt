@@ -31,14 +31,14 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/xclbins/
 
 # Packaging section
 set(CPACK_PACKAGE_NAME "xcdr")
-set(CPACK_PACKAGE_VERSION "0.2.14")
+set(CPACK_PACKAGE_VERSION "0.2.15")
 set(CPACK_PACKAGE_CONTACT "John Nichols <jnichol@xilinx.com>")
 set(CPACK_PACKAGE_VENDOR "Xilinx")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Xilinx Transcoder Application for MPSoC Device")
 set(CPACK_PACKAGE_DESCRIPTION "The Xilinx Media Accelerator Transcoder Application
                                provides utilities and download images to accelerate
                                Decoding, Scaling and  Encoding for H.264 and HEVC streams on a Xilinx FPGA")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "xffmpeg (>= 4.1.9), xmpsoccodecs (>= 1.0.0), xmultiscaler (>= 1.0.0), xlookahead (>= 1.0.0), xmapropstojson (>= 1.0.0), xrm (>= 1.2.1165), xrmu30decoder (>= 1.0.0), xrmu30scaler (>= 1.0.0), xrmu30encoder (>= 1.0.0), launcher (>= 1.0.0), jobslotreservation (>= 1.0.0) " )
-set(CPACK_RPM_PACKAGE_REQUIRES  "xffmpeg >= 4.1.9, xmpsoccodecs >= 1.0.0, xmultiscaler >= 1.0.0, xlookahead >= 1.0.0, xmapropstojson >= 1.0.0, xrm >= 1.2.1165, xrmu30decoder >= 1.0.0, xrmu30scaler >= 1.0.0, xrmu30encoder >= 1.0.0, launcher >= 1.0.0, jobslotreservation >= 1.0.0 ")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "xffmpeg (>= 4.1.10), xmpsoccodecs (>= 1.0.1), xmultiscaler (>= 1.0.1), xlookahead (>= 1.0.1), xmapropstojson (>= 1.0.0), xrm (>= 1.2.1165), xrmu30decoder (>= 1.0.0), xrmu30scaler (>= 1.0.0), xrmu30encoder (>= 1.0.0), launcher (>= 1.0.0), jobslotreservation (>= 1.0.0) " )
+set(CPACK_RPM_PACKAGE_REQUIRES  "xffmpeg >= 4.1.10, xmpsoccodecs >= 1.0.1, xmultiscaler >= 1.0.1, xlookahead >= 1.0.1, xmapropstojson >= 1.0.0, xrm >= 1.2.1165, xrmu30decoder >= 1.0.0, xrmu30scaler >= 1.0.0, xrmu30encoder >= 1.0.0, launcher >= 1.0.0, jobslotreservation >= 1.0.0 ")
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION "/opt" "/opt/xilinx" "/usr/lib" "/usr/lib/pkgconfig")
 include(CPack)
