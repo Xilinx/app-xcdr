@@ -21,25 +21,67 @@ source /opt/xilinx/xrt/setup.sh
 source /opt/xilinx/xrm/setup.sh
 export LD_LIBRARY_PATH=/opt/xilinx/ffmpeg/lib:$LD_LIBRARY_PATH
 export PATH=/opt/xilinx/ffmpeg/bin:/opt/xilinx/xcdr/bin:/opt/xilinx/launcher/bin:/opt/xilinx/jobSlotReservation/bin:$PATH
+source /opt/xilinx/xcdr/xrmd_start.bash
 
-systemctl start xrmd
-sleep 1
+VVAS_DIR=/opt/xilinx/vvas
+if [ -d "$VVAS_DIR" ]; then
+    export LD_LIBRARY_PATH=/opt/xilinx/vvas/lib:$LD_LIBRARY_PATH
+    export PKG_CONFIG_PATH=/opt/xilinx/vvas/lib/pkgconfig:$PKG_CONFIG_PATH
+    export PATH=/opt/xilinx/vvas/bin:$PATH
+    export GST_PLUGIN_PATH=/opt/xilinx/vvas/lib/gstreamer-1.0:$GST_PLUGIN_PATH
+fi
 
-numdevice=$(xbutil examine | grep -A 32 "Devices present" | grep -o 'xilinx_u30_gen3x4_base_1' | wc -l)
+OLD_SHELLS="xilinx_u30_gen3x4_base_1 "
+
+old_shell_count=0
+devicestring="device"
+maxlinesoutput=256
+u30string="u30"
+EXAMINE_FILE=/tmp/xbutil_examine.json
+
+detect_older_shells()
+{
+    for shell in $OLD_SHELLS
+    do
+        old=$(grep -A $maxlinesoutput $devicestring $EXAMINE_FILE | grep -c -o $shell)
+        if [ "$old" -gt ${mindevice} ] ;
+        then
+            old_shell_count=$((old_shell_count + "$old"))
+        fi
+    done
+}
+
 mindevice=0
 maxdevice=16
 
+remove_tmp=$(rm -f $EXAMINE_FILE)
+xe=$(xbutil examine -o $EXAMINE_FILE)
+ret=$?
+if [ $ret -eq 0 ] ;
+then
+    detect_older_shells
+    numdevice=$(grep -A $maxlinesoutput $devicestring $EXAMINE_FILE | grep -o $u30string | wc -l)
 
+    if [[ "$numdevice" -gt "$maxdevice" ]] ;
+    then
+        echo "Number of U30 devices $numdevice exceeds maximum supported device count of $maxdevice ";
+    else
+        echo "Number of U30 devices found : $numdevice ";
+    fi
 
-if [[ "$numdevice" -le "$mindevice" ]]; then
-	echo "No U30 devices found"
-	numdevice=$mindevice;
-elif [[ "$numdevice" -gt "$maxdevice" ]]; then
-	echo "Number of U30 devices $numdevice exceeds maximum supported device count of $maxdevice ";
-	numdevice=$maxdevice;
+    if [ "$old_shell_count" -gt "$mindevice" ] ;
+    then
+        echo "$old_shell_count device(s) with an older shell were detected"
+        echo "This is not a supported configuration"
+        return 1 2>/dev/null
+        exit 1
+    fi
 else
-	echo "Number of U30 devices found : $numdevice ";
+  echo "ERROR: Failed to obtain device status. Aborting."
+  return 1 2>/dev/null
+  exit 1
 fi
+remove_tmp=$(rm -f $EXAMINE_FILE)
 
 xrmadm /opt/xilinx/xcdr/scripts/xrm_commands/load_multiple_devices/load_all_devices_cmd.json
 
