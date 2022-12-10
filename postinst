@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Copyright (C) 2022, Xilinx Inc - All rights reserved
+# Xilinx Transcoder (xcdr)
+#
+# Licensed under the Apache License, Version 2.0 (the "License"). You may
+# not use this file except in compliance with the License. A copy of the
+# License is located at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+set -e
+if [[ -f "/tmp/dec.json" ]]; then
+ rm /tmp/dec.json
+fi
+if [[ -f "/tmp/enc.json" ]]; then
+ rm /tmp/enc.json
+fi
+if [[ -f "/tmp/transcode_lite.xclbin" ]]; then
+ rm /tmp/transcode_lite.xclbin
+fi
+mkdir -p /opt/xilinx/xcdr/xclbins/on_prem/
+cp /opt/xilinx/xcdr/xclbins/transcode.xclbin /opt/xilinx/xcdr/xclbins/on_prem/
+/opt/xilinx/xrt/bin/xclbinutil --dump-section SOFT_KERNEL[kernel_vcu_decoder]-METADATA:JSON:/tmp/dec.json --dump-section SOFT_KERNEL[kernel_vcu_encoder]-METADATA:JSON:/tmp/enc.json --input /opt/xilinx/xcdr/xclbins/transcode.xclbin
+/opt/xilinx/xrt/bin/xclbinutil --remove-section BITSTREAM --remove-section SOFT_KERNEL[kernel_vcu_decoder] --remove-section SOFT_KERNEL[kernel_vcu_encoder] --input /opt/xilinx/xcdr/xclbins/transcode.xclbin --output /tmp/transcode_lite.xclbin --skip-uuid-insertion
+rm -f /opt/xilinx/xcdr/xclbins/transcode.xclbin
+touch /tmp/temp
+/opt/xilinx/xrt/bin/xclbinutil --add-section SOFT_KERNEL[kernel_vcu_decoder]-OBJ:RAW:/tmp/temp --add-section SOFT_KERNEL[kernel_vcu_decoder]-METADATA:JSON:/tmp/dec.json --add-section SOFT_KERNEL[kernel_vcu_encoder]-OBJ:RAW:/tmp/temp --add-section SOFT_KERNEL[kernel_vcu_encoder]-METADATA:JSON:/tmp/enc.json --input /tmp/transcode_lite.xclbin --output /opt/xilinx/xcdr/xclbins/transcode.xclbin --skip-uuid-insertion
+rm -f /tmp/dec.json
+rm -f /tmp/enc.json
+rm -f /tmp/transcode_lite.xclbin

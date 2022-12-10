@@ -15,6 +15,111 @@
 # under the License.
 #
 
+parse_parameters()
+{
+  while [ $# -gt 0 ]
+  do
+    arg=$1
+    case $arg in
+      -f)
+      force=1
+      shift
+      ;;
+      *)
+      echo -e "\nWARNING: $arg not a recognized option"
+      shift
+      ;;
+    esac
+  done
+}
+
+validate_supported_os()
+{
+    declare -A supported_os_arr
+    supported_os_arr=(
+        ["Ubuntu"]="18.04 20.04 22.04"
+        ["Amazon Linux"]="2"
+        ["Red Hat"]="7.8"
+    )
+    # Detect OS Distribution
+    if [ -n "$(command -v lsb_release)" ]; then
+        distro_name=$(lsb_release -s -d)
+    elif [ -f "/etc/os-release" ]; then
+        distro_name=$(grep PRETTY_NAME /etc/os-release | sed 's/PRETTY_NAME=//g' | tr -d '="')
+    elif [ -f "/etc/debian_version" ]; then
+        distro_name="Debian $(cat /etc/debian_version)"
+    elif [ -f "/etc/redhat-release" ]; then
+        distro_name=$(cat /etc/redhat-release)
+    else
+        distro_name="$(uname -s) $(uname -r)"
+    fi
+    supported_distros_as_str=""
+    is_os_supported=0
+    for supported_os_name in "${!supported_os_arr[@]}"; do
+        supported_os_versions=${supported_os_arr[$supported_os_name]}
+        for version in $supported_os_versions; do
+            if [[ "$distro_name" = *"$supported_os_name"* ]] && [[ "$distro_name" = *"$version"* ]]; then
+            current_os="$supported_os_name $version"
+            is_os_supported=1
+        fi
+        supported_distros_as_str="$supported_os_name $version, $supported_distros_as_str"
+        done
+    done
+    if [ $is_os_supported -eq 0 ]; then
+        if [ $force -eq 1 ]; then
+            echo -e "\nWARNING: This install script is for ${supported_distros_as_str}but the detected OS is $distro_name!\nForce provided, continuing install...\n"
+        else
+            echo -e "\nERROR: This install script is for ${supported_distros_as_str}but the detected OS is $distro_name!\nUse -f to force."
+            return 255
+        fi
+    fi
+}
+
+validate_supported_kernel()
+{
+    local current_os="$1"
+    supported_kernel_arr=(
+        "Ubuntu 18.04 kernel 5.4"
+        "Ubuntu 20.04 kernel 5.11" "Ubuntu 20.04 kernel 5.4" "Ubuntu 20.04 kernel 5.13"
+        "Ubuntu 22.04 kernel 5.15"
+        "Red Hat 7.8 kernel 4.9.184"
+        "Amazon Linux 2 kernel 4.14" "Amazon Linux 2 kernel 5.10"
+    )
+    supported_distros_as_str=""
+    system_kernel="$(uname -r)"
+    is_kernel_supported=0
+    for os_kernel in "${supported_kernel_arr[@]}"; do
+        if [[ "$current_os kernel $system_kernel" == "$os_kernel"* ]]; then
+            is_kernel_supported=1
+        fi
+        if [[ "$supported_distros_as_str" == "" ]]; then
+            supported_distros_as_str="$os_kernel"
+        else
+            supported_distros_as_str="$os_kernel, $supported_distros_as_str"
+        fi
+    done
+    if [ $is_kernel_supported -eq 0 ]; then
+        if [ $force -eq 1 ]; then
+            echo -e "\nWARNING: This $current_os system has kernel $system_kernel. U30 supports kernel ${supported_distros_as_str}!\nForce provided, continuing install...\n"
+        else
+            echo -e "\nERROR: This $current_os system has kernel $system_kernel. U30 supports ${supported_distros_as_str}!\nUse -f to force."
+            return 255
+        fi
+    fi
+}
+
+force=0
+parse_parameters $@ # Set force if provided
+current_os=""
+validate_supported_os # Also sets current_os
+if [[ $? -ne 0 ]]; then
+    return 255
+fi
+validate_supported_kernel "$current_os"
+if [[ $? -ne 0 ]]; then
+    return 255
+fi
+
 echo ---------------------------------------
 echo -----Source Xilinx U30 setup files-----
 source /opt/xilinx/xrt/setup.sh
